@@ -47,11 +47,15 @@ export default function RegisterPage() {
     }
 
     try {
-      const { error } = await supabase.auth.signUp({
+      const redirectUrl = process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL || `${window.location.origin}/auth/callback`
+      console.log("[v0] Email redirect URL:", redirectUrl)
+      console.log("[v0] Attempting to sign up user:", formData.email)
+
+      const { data, error } = await supabase.auth.signUp({
         email: formData.email,
         password: formData.password,
         options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
+          emailRedirectTo: redirectUrl,
           data: {
             full_name: formData.fullName,
             user_type: formData.userType,
@@ -62,9 +66,15 @@ export default function RegisterPage() {
           },
         },
       })
+
+      console.log("[v0] Signup response:", { data, error })
+
       if (error) throw error
+
+      console.log("[v0] Signup successful, redirecting to verify-email")
       router.push("/auth/verify-email")
     } catch (error: unknown) {
+      console.error("[v0] Signup error:", error)
       setError(error instanceof Error ? error.message : "An error occurred")
     } finally {
       setIsLoading(false)
